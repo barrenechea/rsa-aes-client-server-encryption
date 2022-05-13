@@ -1,15 +1,23 @@
 {
-  "name": "socket-encryption",
+  "name": "rsa-aes-client-server-encryption",
   "version": "1.0.0",
-  "description": "encryption application",
-  "dependencies": {
-    "express": "^4.14.1",
-    "io": "^0.1.10",
-    "node-rsa": "^0.4.2",
-    "socket.io": "^1.7.2"
+  "description": "E2E example of exchanging encrypted messages between server and client",
+  "author": "Sebastián Barrenechea (https://github.com/SebastianBar)",
+  "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=16"
   },
-  "scripts":{
-    "generate": "node init",
+  "scripts": {
+    "generate": "node init.js",
     "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.1",
+    "socket.io": "^4.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sebastianbar/rsa-aes-client-server-encryption.git"
   }
 }

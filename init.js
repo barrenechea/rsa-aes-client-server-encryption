@@ -1,6 +1,6 @@
-const rsaWrapper = require('./components/rsa-wrapper');
+import { generateKeyPair } from './components/rsa-wrapper.js';
 
-rsaWrapper.generate('server');
-rsaWrapper.generate('client');
+await generateKeyPair('server');
+await generateKeyPair('client');
 
 console.log('Keys generated ...');

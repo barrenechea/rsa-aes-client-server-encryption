@@ -1,66 +1,83 @@
-const crypto = require('crypto');
+import crypto from 'node:crypto';
+import { promisify } from 'node:util';
 
-const aesWrapper = {};
+const randomBytesAsync = promisify(crypto.randomBytes);
 
-// get list of supportable encryption algorithms
-aesWrapper.getAlgorithmList = () => {
-    console.log(crypto.getCiphers());
+/**
+   * Generates a random initialization vector
+   * @returns {Buffer} initialization vector
+   */
+const generateIv = () => randomBytesAsync(16);
+
+/**
+   * separate initialization vector from message
+   * @param {string} data data to separate
+   */
+const parseRawMessage = (data) => {
+  const iv = data.slice(-24);
+  const message = data.substring(0, data.length - 24);
+
+  return {
+    iv: Buffer.from(iv, 'base64'),
+    message: Buffer.from(message, 'base64'),
+  };
 };
 
-aesWrapper.generateKey = () => {
-    return crypto.randomBytes(32);
+/**
+   * add initialization vector to message
+   * @param {Buffer} iv initialization vector
+   * @param {string} base64Message base64 encrypted message
+   * @returns {string} base64 encrypted message with iv
+   */
+const addIvToBody = (iv, base64Message) => {
+  const base64Iv = iv.toString('base64');
+
+  return `${base64Message}${base64Iv}`;
 };
 
-aesWrapper.generateIv = () => {
-    return crypto.randomBytes(16);
+/**
+ * Generates a random AES key
+ * @returns {Buffer} AES key
+ */
+export const generateKey = () => randomBytesAsync(32);
+
+/**
+   * create AES message
+   * @param {Buffer} key AES key
+   * @param {Buffer} iv initialization vector
+   * @param {string} text message to encrypt
+   * @returns base64 encoded AES message
+   */
+export const encrypt = (key, iv, text) => {
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+  const encrypted = Buffer.concat([cipher.update(Buffer.from(text)), cipher.final()]);
+
+  return encrypted.toString('base64');
 };
 
-// separate initialization vector from message
-aesWrapper.separateVectorFromData = (data) =>  {
-    console.log(data);
-    console.log('data');
-    var iv = data.slice(-24);
-    var message = data.substring(0, data.length - 24)
+/**
+   * decrypts AES message
+   * @param {Buffer} key AES key
+   * @param {string} text base64 encoded AES message
+   * @returns {string}  decrypted message
+   */
+export const decryptAES = (key, text) => {
+  const data = parseRawMessage(text);
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, data.iv);
+  const decrypted = Buffer.concat([decipher.update(data.message), decipher.final()]);
 
-    return{
-        iv: iv,
-        message: message
-    };
-}
-
-aesWrapper.encrypt = (key, iv, text) => {
-    let encrypted = '';
-    let cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-    encrypted += cipher.update(Buffer.from(text), 'utf8', 'base64');
-    encrypted += cipher.final('base64');
-
-    return encrypted;
+  return decrypted.toString('utf8');
 };
 
-aesWrapper.decrypt = (key, text) => {
-    let dec = '';
-    let data = aesWrapper.separateVectorFromData(text);
-    let cipher = crypto.createDecipheriv('aes-256-cbc', key,  Buffer.from(data.iv, 'base64'));
-    dec += cipher.update(Buffer.from(data.message, 'base64'), 'base64', 'utf8');
-    dec += cipher.final('utf8');
+/**
+   * create an AES encrypted message
+   * @param {Buffer} aesKey AES key
+   * @param {string} message message to encrypt
+   * @returns {Buffer} base64 encoded AES message with attached iv
+   */
+export const createAesMessage = async (aesKey, message) => {
+  const aesIv = await generateIv();
+  const encryptedMessage = encrypt(aesKey, aesIv, message);
 
-    return dec;
+  return addIvToBody(aesIv, encryptedMessage);
 };
-
-// add initialization vector to message
-aesWrapper.addIvToBody = (iv, encryptedBase64) => {
-    encryptedBase64 += iv.toString('base64');
-    console.log(iv.toString('base64'));
-
-    return encryptedBase64;
-};
-
-aesWrapper.createAesMessage = (aesKey, message) => {
-    let aesIv = aesWrapper.generateIv();
-    let encryptedMessage = aesWrapper.encrypt(aesKey, aesIv, message);
-    encryptedMessage = aesWrapper.addIvToBody(aesIv, encryptedMessage);
-
-    return encryptedMessage;
-};
-
-module.exports = aesWrapper;
