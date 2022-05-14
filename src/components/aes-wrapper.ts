@@ -5,15 +5,15 @@ const randomBytesAsync = promisify(crypto.randomBytes);
 
 /**
    * Generates a random initialization vector
-   * @returns {Buffer} initialization vector
+   * @returns initialization vector
    */
-const generateIv = () => randomBytesAsync(16);
+const generateIv = (): Promise<Buffer> => randomBytesAsync(16);
 
 /**
    * separate initialization vector from message
-   * @param {string} data data to separate
+   * @param data data to separate
    */
-const parseRawMessage = (data) => {
+const parseRawMessage = (data: string): { iv: Buffer, message: Buffer } => {
   const iv = data.slice(-24);
   const message = data.substring(0, data.length - 24);
 
@@ -25,11 +25,11 @@ const parseRawMessage = (data) => {
 
 /**
    * add initialization vector to message
-   * @param {Buffer} iv initialization vector
-   * @param {string} base64Message base64 encrypted message
-   * @returns {string} base64 encrypted message with iv
+   * @param iv initialization vector
+   * @param base64Message base64 encrypted message
+   * @returns base64 encrypted message with iv
    */
-const addIvToBody = (iv, base64Message) => {
+const addIvToBody = (iv: Buffer, base64Message: string): string => {
   const base64Iv = iv.toString('base64');
 
   return `${base64Message}${base64Iv}`;
@@ -37,18 +37,18 @@ const addIvToBody = (iv, base64Message) => {
 
 /**
  * Generates a random AES key
- * @returns {Buffer} AES key
+ * @returns AES key
  */
-export const generateKey = () => randomBytesAsync(32);
+export const generateKey = (): Promise<Buffer> => randomBytesAsync(32);
 
 /**
    * create AES message
-   * @param {Buffer} key AES key
-   * @param {Buffer} iv initialization vector
-   * @param {string} text message to encrypt
+   * @param key AES key
+   * @param iv initialization vector
+   * @param text message to encrypt
    * @returns base64 encoded AES message
    */
-export const encrypt = (key, iv, text) => {
+export const encrypt = (key: Buffer, iv: Buffer, text: string): string => {
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   const encrypted = Buffer.concat([cipher.update(Buffer.from(text)), cipher.final()]);
 
@@ -57,11 +57,11 @@ export const encrypt = (key, iv, text) => {
 
 /**
    * decrypts AES message
-   * @param {Buffer} key AES key
-   * @param {string} text base64 encoded AES message
-   * @returns {string}  decrypted message
+   * @param key AES key
+   * @param text base64 encoded AES message
+   * @returns decrypted message
    */
-export const decryptAES = (key, text) => {
+export const decryptAES = (key: Buffer, text: string): string => {
   const data = parseRawMessage(text);
   const decipher = crypto.createDecipheriv('aes-256-cbc', key, data.iv);
   const decrypted = Buffer.concat([decipher.update(data.message), decipher.final()]);
@@ -71,11 +71,11 @@ export const decryptAES = (key, text) => {
 
 /**
    * create an AES encrypted message
-   * @param {Buffer} aesKey AES key
-   * @param {string} message message to encrypt
-   * @returns {Buffer} base64 encoded AES message with attached iv
+   * @param aesKey AES key
+   * @param message message to encrypt
+   * @returns base64 encoded AES message with attached iv
    */
-export const createAesMessage = async (aesKey, message) => {
+export const createAesMessage = async (aesKey: Buffer, message: string): Promise<string> => {
   const aesIv = await generateIv();
   const encryptedMessage = encrypt(aesKey, aesIv, message);
 
