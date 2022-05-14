@@ -5,7 +5,7 @@ import { initLoadServerKeys, encryptRSA, decryptRSA } from './components/rsa-wra
 import { generateKey, createAesMessage, decryptAES } from './components/aes-wrapper.js';
 
 const app = express();
-const http = Server(app);
+const http = new Server(app);
 const io = new SocketIOServer(http);
 
 const keys = await initLoadServerKeys();

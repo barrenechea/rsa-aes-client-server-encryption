@@ -28,7 +28,7 @@ export const initLoadServerKeys = async () => {
   };
 };
 
-export const generateKeyPair = async (direction) => {
+export const generateKeyPair = async (direction: string): Promise<void> => {
   const options = {
     name: 'RSASSA-PKCS1-v1_5',
     modulusLength: 2048,
@@ -43,8 +43,8 @@ export const generateKeyPair = async (direction) => {
     webcrypto.subtle.exportKey('pkcs8', keys.privateKey),
   ]);
 
-  const base64PubKey = Buffer.from(publicKey).toString('base64').match(/.{1,64}/g).join('\n');
-  const base64PrivKey = Buffer.from(privateKey).toString('base64').match(/.{1,64}/g).join('\n');
+  const base64PubKey = Buffer.from(publicKey).toString('base64').match(/.{1,64}/g)!.join('\n');
+  const base64PrivKey = Buffer.from(privateKey).toString('base64').match(/.{1,64}/g)!.join('\n');
 
   const publicKeyFile = `-----BEGIN PUBLIC KEY-----\n${base64PubKey}\n-----END PUBLIC KEY-----\n`;
   const privateKeyFile = `-----BEGIN PRIVATE KEY-----\n${base64PrivKey}\n-----END PRIVATE KEY-----\n`;
@@ -55,24 +55,16 @@ export const generateKeyPair = async (direction) => {
   ]);
 };
 
-export const encryptRSA = async (publicKey, message) => {
+export const encryptRSA = async (publicKey: CryptoKey, message: string): Promise<string> => {
   const decryptedBuffer = Buffer.from(message);
-  const encryptedBuffer = await webcrypto.subtle.encrypt({
-    name: 'RSA-OAEP',
-    publicKey,
-    hash: { name: 'SHA-256' },
-  }, publicKey, decryptedBuffer);
-
+  const encryptedBuffer = await webcrypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, decryptedBuffer);
+  
   return Buffer.from(encryptedBuffer).toString('base64');
 };
 
-export const decryptRSA = async (privateKey, base64Message) => {
+export const decryptRSA = async (privateKey: CryptoKey, base64Message: string): Promise<string> => {
   const encryptedBuffer = Buffer.from(base64Message, 'base64');
-  const decryptedBuffer = await webcrypto.subtle.decrypt({
-    name: 'RSA-OAEP',
-    privateKey,
-    hash: { name: 'SHA-256' },
-  }, privateKey, encryptedBuffer);
+  const decryptedBuffer = await webcrypto.subtle.decrypt({ name: 'RSA-OAEP' }, privateKey, encryptedBuffer);
 
   return Buffer.from(decryptedBuffer).toString();
 }

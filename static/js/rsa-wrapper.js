@@ -1,62 +1,43 @@
 (function () {
 
-    'use strict';
+  'use strict';
 
-    var crypto = window.crypto.subtle;
-    var rsaParams =  {name:"RSA-OAEP", hash: {name: "SHA-1"}};
+  const crypto = window.crypto.subtle;
+  const rsaParams = { name: "RSA-OAEP", hash: { name: "SHA-1" } };
 
-    function importPublicKey(keyInPemFormat){
-        return new Promise(function(resolve, reject){
-            var key = converterWrapper.convertPemToBinary2(keyInPemFormat);
-            key = converterWrapper.base64StringToArrayBuffer(key);
+  const importPublicKey = async (keyInPemFormat) => {
+    let key = converterWrapper.convertPemToBinary2(keyInPemFormat);
+    key = converterWrapper.base64StringToArrayBuffer(key);
 
-            crypto.importKey('spki', key, rsaParams, false, ["encrypt"])
-                .then(function(cryptokey) {
-                    resolve(cryptokey);
-                });
-        });
-    }
+    return crypto.importKey('spki', key, rsaParams, false, ["encrypt"]);
+  };
 
-    function importPrivateKey(keyInPemFormat){
+  const importPrivateKey = async (keyInPemFormat) => {
+    let key = converterWrapper.convertPemToBinary2(keyInPemFormat);
+    key = converterWrapper.base64StringToArrayBuffer(key);
 
-        var key = converterWrapper.convertPemToBinary2(keyInPemFormat);
-        key = converterWrapper.base64StringToArrayBuffer(key);
+    return crypto.importKey('pkcs8', key, rsaParams, false, ["decrypt"]);
+  };
 
-        return new Promise(function(resolve, reject){
-            crypto.importKey('pkcs8', key, rsaParams, false, ["decrypt"])
-                .then(function(cryptokey) {
-                    resolve(cryptokey);
-                });
-        });
-    }
+  const publicEncrypt = async (keyInPemFormat, message) => {
+    const cryptoKey = await importPublicKey(keyInPemFormat);
+    const encrypted = await crypto.encrypt(rsaParams, cryptoKey, converterWrapper.str2abUtf8(message));
 
-    function publicEncrypt(keyInPemFormat, message) {
-        return new Promise(function(resolve, reject){
-            importPublicKey(keyInPemFormat).then(function (key) {
-                crypto.encrypt(rsaParams, key, converterWrapper.str2abUtf8(message))
-                    .then(function(encrypted){
-                        resolve(converterWrapper.arrayBufferToBase64String(encrypted));
-                    });
-            })
-        });
-    }
+    return converterWrapper.arrayBufferToBase64String(encrypted);
+  };
 
-    function privateDecrypt(keyInPemFormat, encryptedBase64Message) {
-        return new Promise(function(resolve, reject){
-            importPrivateKey(keyInPemFormat).then(function (key) {
-                crypto.decrypt(rsaParams, key, converterWrapper.base64StringToArrayBuffer(encryptedBase64Message))
-                    .then(function(decrypted){
-                        resolve(converterWrapper.arrayBufferToUtf8(decrypted));
-                    });
-            });
-        });
-    }
+  const privateDecrypt = async (keyInPemFormat, encryptedBase64Message) => {
+    const cryptoKey = await importPrivateKey(keyInPemFormat);
+    const decrypted = await crypto.decrypt(rsaParams, cryptoKey, converterWrapper.base64StringToArrayBuffer(encryptedBase64Message));
 
-    window.rsaWrapper = {
-        importPrivateKey: importPrivateKey,
-        importPublicKey: importPublicKey,
-        privateDecrypt: privateDecrypt,
-        publicEncrypt: publicEncrypt
-    }
+    return converterWrapper.arrayBufferToUtf8(decrypted);
+  };
+
+  window.rsaWrapper = {
+    importPrivateKey: importPrivateKey,
+    importPublicKey: importPublicKey,
+    privateDecrypt: privateDecrypt,
+    publicEncrypt: publicEncrypt
+  };
 
 }());
