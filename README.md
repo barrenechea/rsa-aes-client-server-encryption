@@ -16,13 +16,13 @@ NodeJS >= 16
 Generate keys
 ---------------
 ~~~~~~~~~~~~~~~~~~
-npm run generate
+npm run generate:keys
 ~~~~~~~~~~~~~~~~~~
 Then overwrite textarea values in static/index.html
 
 Run
 ---
 ~~~~~~~~~~~~~~~~~~
-npm start
+npm run dev
 ~~~~~~~~~~~~~~~~~~
 Starts a web server with WebSockets on port 3000

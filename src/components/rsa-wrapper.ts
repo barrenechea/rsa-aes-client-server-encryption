@@ -19,7 +19,7 @@ export const initLoadServerKeys = async () => {
   };
 };
 
-export const generateKeyPair = async (direction) => {
+export const generateKeyPair = async (direction: string): Promise<void> => {
   const keys = await generateKeyPairAsync('rsa', {
     modulusLength: 2048,
     publicKeyEncoding: {
@@ -38,7 +38,7 @@ export const generateKeyPair = async (direction) => {
   ]);
 };
 
-export const encryptRSA = (publicKey, message) => {
+export const encryptRSA = (publicKey: Buffer, message: string): string => {
   const decryptedBuffer = Buffer.from(message);
   const encryptedBuffer = crypto.publicEncrypt({
     key: publicKey,
@@ -48,7 +48,7 @@ export const encryptRSA = (publicKey, message) => {
   return encryptedBuffer.toString('base64');
 };
 
-export const decryptRSA = (privateKey, base64Message) => {
+export const decryptRSA = (privateKey: Buffer, base64Message: string): string => {
   const encryptedBuffer = Buffer.from(base64Message, 'base64');
   const decryptedBuffer = crypto.privateDecrypt({
     key: privateKey,
