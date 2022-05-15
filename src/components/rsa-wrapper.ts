@@ -2,29 +2,33 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { webcrypto } from 'node:crypto';
 
+const rsaParams = { name: "RSA-OAEP", hash: { name: "SHA-1" } };
+
 export const initLoadServerKeys = async () => {
-  const [serverPub, serverPrivate, clientPub] = await Promise.all([
+  const [serverPubInit, serverPrivateInit, clientPubInit] = await Promise.all([
     fs.readFile(path.resolve('keys', 'server.public.pem')),
     fs.readFile(path.resolve('keys', 'server.private.pem')),
     fs.readFile(path.resolve('keys', 'client.public.pem'))
   ]);
 
-  const serverPubString = serverPub.toString('utf8').replace(/^-+(BEGIN|END) PUBLIC KEY-+\n/, '').replace(/\n/g, '');
-  const serverPrivateString = serverPrivate.toString('utf8').replace(/^-+(BEGIN|END) PRIVATE KEY-+\n/, '').replace(/\n/g, '');
-  const clientPubString = clientPub.toString('utf8').replace(/^-+(BEGIN|END) PUBLIC KEY-+\n/, '').replace(/\n/g, '');
+  const serverPubString = serverPubInit.toString('utf8').replace(/^-+(BEGIN|END) PUBLIC KEY-+\n/, '').replace(/\n/g, '');
+  const serverPrivateString = serverPrivateInit.toString('utf8').replace(/^-+(BEGIN|END) PRIVATE KEY-+\n/, '').replace(/\n/g, '');
+  const clientPubString = clientPubInit.toString('utf8').replace(/^-+(BEGIN|END) PUBLIC KEY-+\n/, '').replace(/\n/g, '');
 
   const serverPubBuffer = Buffer.from(serverPubString, 'base64');
   const serverPrivateBuffer = Buffer.from(serverPrivateString, 'base64');
   const clientPubBuffer = Buffer.from(clientPubString, 'base64');
 
-  const serverPubKey = await webcrypto.subtle.importKey('spki', serverPubBuffer, { name: 'RSA-OAEP', hash: { name: 'SHA-256' } }, true, ['encrypt', 'wrapKey']);
-  const serverPrivateKey = await webcrypto.subtle.importKey('pkcs8', serverPrivateBuffer, { name: 'RSA-OAEP', hash: { name: 'SHA-256' } }, true, ['decrypt', 'unwrapKey']);
-  const clientPubKey = await webcrypto.subtle.importKey('spki', clientPubBuffer, { name: 'RSA-OAEP', hash: { name: 'SHA-256' } }, true, ['encrypt', 'wrapKey']);
+  const [serverPub, serverPrivate, clientPub] = await Promise.all([
+    webcrypto.subtle.importKey('spki', serverPubBuffer, rsaParams, false, ["encrypt"]),
+    webcrypto.subtle.importKey('pkcs8', serverPrivateBuffer, rsaParams, false, ["decrypt"]),
+    webcrypto.subtle.importKey('spki', clientPubBuffer, rsaParams, false, ["encrypt"])
+  ]);
 
   return {
-    serverPub: serverPubKey,
-    serverPrivate: serverPrivateKey,
-    clientPub: clientPubKey
+    serverPub,
+    serverPrivate,
+    clientPub
   };
 };
 
@@ -58,7 +62,7 @@ export const generateKeyPair = async (direction: string): Promise<void> => {
 export const encryptRSA = async (publicKey: CryptoKey, message: string): Promise<string> => {
   const decryptedBuffer = Buffer.from(message);
   const encryptedBuffer = await webcrypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, decryptedBuffer);
-  
+
   return Buffer.from(encryptedBuffer).toString('base64');
 };
 
