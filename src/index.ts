@@ -16,19 +16,19 @@ app.use(express.static('./static'));
 // web socket connection event
 io.on('connection', async (socket) => {
   // Test sending to client dummy RSA message
-  const encrypted = encryptRSA(keys.clientPub, 'Hello RSA message from client to server');
+  const encrypted = await encryptRSA(keys.clientPub, 'Hello RSA message from client to server');
   socket.emit('rsa server encrypted message', encrypted);
 
   // Test accepting dummy RSA message from client
-  socket.on('rsa client encrypted message', (data) => {
+  socket.on('rsa client encrypted message', async (data) => {
     console.log('Server received RSA message from client');
     console.log('Encrypted message:', data);
-    console.log('Decrypted message:', decryptRSA(keys.serverPrivate, data));
+    console.log('Decrypted message:', await decryptRSA(keys.serverPrivate, data));
   });
 
   // Test AES key sending
   const aesKey = await generateKey();
-  const encryptedAesKey = encryptRSA(keys.clientPub, (aesKey.toString('base64')));
+  const encryptedAesKey = await encryptRSA(keys.clientPub, (aesKey.toString('base64')));
   socket.emit('send key from server to client', encryptedAesKey);
 
   // Test accepting dummy AES key message
@@ -41,11 +41,11 @@ io.on('connection', async (socket) => {
   });
 });
 
-http.listen(3000, () => {
+http.listen(3000, async () => {
   console.log('listening on *:3000');
 
-  const encrypted = encryptRSA(keys.serverPub, 'Server init hello');
+  const encrypted = await encryptRSA(keys.serverPub, 'Server init hello');
   console.log('Encrypted RSA string:', encrypted);
-  const decrypted = decryptRSA(keys.serverPrivate, encrypted);
+  const decrypted = await decryptRSA(keys.serverPrivate, encrypted);
   console.log('Decrypted RSA string:', decrypted);
 });
