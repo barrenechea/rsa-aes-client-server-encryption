@@ -20,7 +20,7 @@ io.on('connection', async (socket) => {
   socket.emit('rsa server encrypted message', encrypted);
 
   // Test accepting dummy RSA message from client
-  socket.on('rsa client encrypted message', async (data) => {
+  socket.on('rsa client encrypted message', async (data: string) => {
     console.log('Server received RSA message from client');
     console.log('Encrypted message:', data);
     console.log('Decrypted message:', await decryptRSA(keys.serverPrivate, data));
@@ -32,7 +32,7 @@ io.on('connection', async (socket) => {
   socket.emit('send key from server to client', encryptedAesKey);
 
   // Test accepting dummy AES key message
-  socket.on('aes client encrypted message', async (data) => {
+  socket.on('aes client encrypted message', async (data: string) => {
     console.log('Decrypted message:', decryptAES(aesKey, data));
 
     // Test send client dummy AES message
